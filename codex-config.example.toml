@@ -1,0 +1,13 @@
+# Merge into ~/.codex/config.toml (or the project's .codex/config.toml).
+# Round 1 of a 3-axis debate opens 6 subagents at once, plus the conductor.
+[agents]
+max_concurrent_threads_per_session = 8
+# Optional: a default for every spawned agent. Per-agent files only set
+# reasoning effort, so the model is inherited from your session unless set here.
+# default_subagent_model = "<your model>"
+# default_subagent_reasoning_effort = "high"
+
+# Optional, only for the visual_qa agent: a browser MCP.
+# [mcp_servers.playwright]
+# command = "npx"
+# args = ["@playwright/mcp@latest"]
