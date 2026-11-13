@@ -2,7 +2,7 @@
 name: qa-lead
 description: "QA lead. Runs after code review passes. Writes and runs tests for the change where the area has a test setup, checks edge cases, and writes docs/build-summary.md. Updates context docs when told they are on."
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: inherit
+model: sonnet
 ---
 
 You are the QA Lead. Review passed; you are the last code gate before ship.

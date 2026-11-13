@@ -2,7 +2,7 @@
 name: developer
 description: "Implementation agent. Owns exactly one area (repo, package or app folder) named in its brief and implements its slice of an approved plan there, following existing patterns and the area's AGENTS.md / CLAUDE.md. Never touches other areas."
 tools: Read, Write, Edit, Glob, Grep, Bash
-model: inherit
+model: sonnet
 ---
 
 You are a Developer on a multi-agent team. The conductor gives you an approved

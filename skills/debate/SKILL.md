@@ -1,6 +1,6 @@
 ---
 name: debate
-description: Adversarial multi-agent debate over a diff, an implementation plan, or an open design question. Isolated challenger and defender subagents argue each axis, cross-examine, and a fresh-context judge rules per point. Produces a decision record, not a findings list. Use when the question is "is this the right solution?" rather than "does this pass lint/CI". Trigger words - debate, pressure-test, challenge this plan, devil's advocate, is this the right design. Also called by the `ship` skill to debate the architect's plan.
+description: Adversarial multi-agent debate over a diff, an implementation plan, or an open design question. Isolated challenger and defender subagents argue each axis, cross-examine, and a fresh-context judge rules per point. Produces a decision record, not a findings list. Use when the question is "is this the right solution?" rather than "does this pass lint/CI". Trigger words - debate, pressure-test, challenge this plan, devil's advocate, is this the right design. Also called by the `ship-crew` skill to debate the architect's plan.
 disable-model-invocation: true
 ---
 
@@ -65,7 +65,7 @@ Two identical reviewers agree. Dissent has to be structural:
 
 ## Subjects
 
-From the user's request (or from the `ship` skill):
+From the user's request (or from the `ship-crew` skill):
 
 - **diff** (default) — uncommitted work, a branch, a commit range, or a path.
 - **plan** — a plan file or a plan pasted into the request. Debating before

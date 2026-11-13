@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the ship pipeline (skills `ship` + `debate` and 8 agents) for Claude Code and/or Codex.
+# Install the ship-crew pipeline (skills `ship-crew` + `debate` and 8 agents) for Claude Code and/or Codex.
 #
 #   ./install.sh /path/to/repo            project scope, both tools
 #   ./install.sh --user                   personal scope (~), both tools
@@ -27,16 +27,16 @@ copy() { # src dest
 
 if [[ $CLAUDE -eq 1 ]]; then
   echo "Claude Code:"
-  for s in ship debate; do copy "$SRC/skills/$s" "$TARGET/.claude/skills/$s"; done
+  for s in ship-crew debate; do copy "$SRC/skills/$s" "$TARGET/.claude/skills/$s"; done
   for f in "$SRC"/agents/claude/*.md; do copy "$f" "$TARGET/.claude/agents/$(basename "$f")"; done
 fi
 if [[ $CODEX -eq 1 ]]; then
   echo "Codex:"
-  for s in ship debate; do copy "$SRC/skills/$s" "$TARGET/.agents/skills/$s"; done
+  for s in ship-crew debate; do copy "$SRC/skills/$s" "$TARGET/.agents/skills/$s"; done
   for f in "$SRC"/agents/codex/*.toml; do copy "$f" "$TARGET/.codex/agents/$(basename "$f")"; done
 fi
 echo
 echo "Done. Restart the tool, then:"
-[[ $CLAUDE -eq 1 ]] && echo "  Claude Code:  /ship plan only <task>"
-[[ $CODEX -eq 1 ]] && echo "  Codex:        \$ship plan only <task>   (and merge codex-config.example.toml into ~/.codex/config.toml)"
+[[ $CLAUDE -eq 1 ]] && echo "  Claude Code:  /ship-crew plan only <task>"
+[[ $CODEX -eq 1 ]] && echo "  Codex:        \$ship-crew plan only <task>   (and merge codex-config.example.toml into ~/.codex/config.toml)"
 exit 0

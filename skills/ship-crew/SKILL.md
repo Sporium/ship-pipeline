@@ -1,25 +1,44 @@
 ---
-name: ship
-description: Full multi-agent feature pipeline - architect plans, the plan is debated adversarially, the user approves, developer subagents implement in parallel per area, code-reviewer reviews, qa-lead writes tests and a build summary, visual-qa checks the UI in a browser. Use for any multi-file or multi-repo feature, or when the user says ship, build this feature end to end, plan and implement, or "plan only" for just the architect + debate stage.
+name: ship-crew
+description: Full multi-agent feature pipeline for any stack - Explore maps the repo, architect plans, the plan is debated adversarially, the user approves, developer subagents implement in parallel per area, code-reviewer reviews against layered rules (project rules, stack packs, a universal core), qa-lead writes tests and a build summary, visual-qa checks the UI in a browser. Use for any multi-file or multi-repo feature, or when the user says ship, ship-crew, build this feature end to end, plan and implement, "plan only" for just the architect + debate stage, "review" for a standalone review of the current diff, or "rules" to write the repo's own review guidelines.
 disable-model-invocation: true
 ---
 
-# Ship
+# Ship crew
 
-Orchestrate a full feature implementation for the user's task.
+Orchestrate a full feature implementation for the user's task, in any stack.
 
 You (the main session) are the **conductor**. You do not write feature code
 yourself. You spawn the custom agents listed below, pass each one a
 complete brief, wait for results, and relay between them:
 
-| Agent (`name`) | Role | Writes code? |
-|---|---|---|
-| `architect` | investigates, produces the plan | no |
-| `debate-challenger` / `debate-defender` / `debate-judge` | adversarial plan/impl debate (via the `debate` skill) | no |
-| `developer` | implements one area (repo / package / app) of the plan | yes, only in its area |
-| `code-reviewer` | independent review of the combined diff | no |
-| `qa-lead` | tests + `docs/build-summary.md` | tests and docs only |
-| `visual-qa` | drives a real browser against the running app | no |
+| Agent (`name`) | Role | Writes code? | Model |
+|---|---|---|---|
+| `Explore` | Step 0 recon: repo map, stack, commands, rule files | no | haiku (built-in) |
+| `architect` | investigates, produces the plan | no | opus |
+| `debate-challenger` / `debate-defender` / `debate-judge` | adversarial plan/impl debate (via the `debate` skill) | no | opus |
+| `developer` | implements one area (repo / package / app) of the plan | yes, only in its area | sonnet |
+| `code-reviewer` | independent review of the combined diff | no | opus |
+| `qa-lead` | tests + `docs/build-summary.md` | tests and docs only | sonnet |
+| `visual-qa` | drives a real browser against the running app | no | sonnet |
+| `checker` *(optional)* | final independent gate before the report | no | your own agent |
+
+The models are set in each agent's frontmatter, so the crew keeps its split even
+when the session or `CLAUDE_CODE_SUBAGENT_MODEL` defaults to a cheaper model.
+Search and file-finding go to `Explore`; anything that writes code never runs
+on haiku.
+
+### Team of models (Claude Code)
+
+- **Advisor.** If your session has the advisor tool (`/advisor <model>`),
+  consult it at four points: before Step 2 (is this plan the right approach?),
+  when the same failure comes back a second time (a developer or a review loop
+  that does not converge), before resolving a stack-pack selection you are
+  unsure of, and before the final report. If there is no advisor, skip silently.
+- **Checker.** If a `checker` agent is installed (`~/.claude/agents/checker.md`
+  or the project's), run it once before Step 7 with the plan, the changed-file
+  list and the review/QA verdicts, and paste its verdict into the report. If it
+  is not installed, say "checker: not installed" in the report.
 
 **Every subagent starts cold.** It sees only the brief you give it — not this
 conversation, not other agents' output. Anything you leave out, it cannot know.
@@ -56,7 +75,9 @@ This file uses the hyphenated names. In Codex, read `-` as `_`.
 | `debate implementation` | implementation debate also runs |
 | `debate <axes>` (e.g. `debate cost,operability`) | overrides axis choice |
 | `skip context docs` | context docs off (see below) |
-| `skip visual qa` | Step 7 off |
+| `skip visual qa` | Step 6 off |
+| `review` | standalone review of the current diff: Step 0 + Step 4 only, no plan, no code |
+| `rules` | write the repo's own review guidelines (see **Rules mode**), no feature work |
 
 **High-stakes auto-escalation** — regardless of the default, run the plan debate
 on 3 axes with 3 independent judges when the plan touches any of:
@@ -94,9 +115,61 @@ exist in the workspace, and the active modes.
 
 ## Pipeline
 
+### Step 0 — Recon (Explore)
+
+Spawn `Explore` (read-only, "medium" breadth) once per workspace and ask for a
+short factual report, not file dumps:
+
+- areas: each repo / package / app folder, its language and framework;
+- the stack signals it found (`package.json` deps, `composer.json`, `go.mod`,
+  `pyproject.toml` / `requirements*.txt`, `Gemfile`, `pom.xml` / `build.gradle`,
+  `Cargo.toml`, migration folders, ORM schema files);
+- how to build, test and lint each area (the actual scripts / commands);
+- every review-rule file: `REVIEW.md`, `review-guidelines.md`,
+  `.github/review-guidelines.md`, `.github/claude/review-guidelines.md`,
+  `CONTRIBUTING.md`, `AGENTS.md` / `CLAUDE.md` per area;
+- whether `docs/tasks/` or `docs/features/` exist (context docs).
+
+In Codex (no built-in `Explore`), or if spawning it fails, do the recon yourself with read-only commands.
+
+Use the report to pick the **review packs** (below) and put it, verbatim, in the
+architect brief. In `review` mode this is the only recon you need.
+
+### Review rules — three layers
+
+The code-reviewer applies, from strongest to weakest:
+
+1. **Project rules** found in Step 0. They win everywhere they speak.
+2. **Stack packs** in `review/` next to this file, selected by the stack
+   signals. Read each pack's `Detect:` line and choose the packs whose signal
+   is present in a *changed* area. Typical picks:
+
+   | Signal | Pack |
+   |---|---|
+   | any `.ts` / `.js` in the diff | `typescript.md` |
+   | `react`, `next`, `react-native`, `expo` in deps | `react.md` |
+   | `@nestjs/*`, `express`, `fastify`, `hono`, `@trpc/*`, an ORM in a Node area | `node-backend.md` |
+   | `composer.json` (Laravel, Symfony, WordPress) | `php-laravel.md` |
+   | `pyproject.toml` / `requirements*.txt` | `python.md` |
+   | `go.mod` | `go.md` |
+   | migrations, schema files or queries changed | `sql-migrations.md` |
+   | an LLM / agent SDK in deps, prompts or tool definitions changed | `llm.md` |
+   | `.github/workflows/`, `.gitlab-ci.yml`, `Dockerfile`, `*.tf`, k8s / Helm, serverless config changed | `ci-infra.md` |
+
+   No pack fits (Rust, Ruby, Java, Swift/Kotlin…) → core only; the reviewer still
+   reads the project rules and neighbouring code.
+3. **`review/core.md`** — always.
+
+Pass the **absolute paths** of `core.md` and the chosen packs in the reviewer
+brief, plus the project rule files Step 0 found. The reviewer cannot see this
+skill folder otherwise.
+
+A repo without its own rules gets generic reviews forever. Once a review run
+is done, offer `rules` mode if Step 0 found no project rule file.
+
 ### Step 1 — Plan
 
-Spawn `architect` with the brief above. Wait for the plan. It must contain:
+Spawn `architect` with the brief above and the Step 0 report. Wait for the plan. It must contain:
 Goal, Affected Areas, Files to Change, API Contract, Work Units per area,
 Execution Order, Risks & Open Questions.
 
@@ -151,8 +224,13 @@ follow-up spawn.
 
 ### Step 4 — Review
 
-Spawn `code-reviewer` with the combined list of changed files per repo and the
-approved plan (for contract verification).
+Spawn `code-reviewer` with the combined list of changed files per repo, the
+approved plan (for contract verification), and the rule layers: project rule
+files, absolute paths of the chosen packs and of `review/core.md`.
+
+For a large diff (roughly 40+ files or several areas), split the review: one
+`code-reviewer` per area in parallel, each with that area's files and packs,
+then merge and de-duplicate their findings yourself.
 
 `CHANGES REQUESTED` → spawn a fresh `developer` for the owning area with the
 blocking findings pasted in, then a fresh `code-reviewer` on the result. Do not
@@ -188,6 +266,13 @@ is available, tell the user visual QA was skipped and why.
 Blockers → fresh `developer` (frontend area) with them, then re-run `visual-qa`.
 Nits may be deferred with the user's okay.
 
+### Before the report — checker and advisor
+
+Run `checker` if installed, and consult the advisor if available (see **Team of
+models**). A checker `FAIL` with a concrete scenario goes back to a fresh
+`developer` like a review blocker; anything vaguer goes to the user as an open
+item.
+
 ### Step 7 — Final report
 
 ```
@@ -199,9 +284,30 @@ Nits may be deferred with the user's okay.
 **Build summary:** docs/build-summary.md
 **Debate record:** docs/reviews/<date>-<slug>-debate.md (if a debate ran)
 **Visual QA:** docs/visual-qa/<date>-<slug>/report.md (if it ran)
+**Review layers:** project rules used, packs applied
+**Checker:** verdict (or "not installed")
 **Context docs updated:** (if on)
 **Open items / blockers:** ...
 ```
+
+## Rules mode — write the repo's own review guidelines
+
+Triggered by `rules`. Goal: replace generic packs with the project's real
+failure modes, in the format of `assets/review-guidelines-template.md`.
+
+1. Step 0 recon as usual.
+2. Spawn `architect` (read-only) per area with: the Step 0 report, the template
+   path, `review/core.md` and the matching packs as a *starting list*, and this
+   job: find how the area does auth, ownership checks, transactions, money,
+   config, errors, generated clients, migrations; read `git log` for fix
+   commits (`fix`, `hotfix`, `revert`, `bug`) of the last ~6 months and what
+   they fixed; keep only rules this codebase can actually violate, phrased with
+   its own names (its guard, its helper, its folder); add "Do not report"
+   entries for things the linter, generated code or the team's conventions
+   already cover.
+3. Show the user the draft per area. On approval, write it to
+   `.github/claude/review-guidelines.md` in that area (or where the user says).
+   Do not commit.
 
 ## Rules
 
