@@ -28,6 +28,11 @@ and instructions:
 | How to spawn | `Agent` tool, `subagent_type: "<name>"`, full brief in `prompt` | ask to spawn the agent by its `name` with the full brief |
 | Parallel | several `Agent` calls in **one** message | spawn them together; Codex waits for all |
 
+Installed as the `ship-crew` Claude Code plugin, the agents are namespaced
+(`ship-crew:debate-challenger`, `ship-crew:debate-defender`,
+`ship-crew:debate-judge`). Use whichever form appears in your list of available
+agents; if both exist, prefer the namespaced one.
+
 This file uses the hyphenated names. In Codex, read `-` as `_`.
 
 - Spawn one-shot agents. In Claude Code **do not pass `name:` / `team_name:`**

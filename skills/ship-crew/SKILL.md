@@ -87,11 +87,11 @@ namespaced one. Files next to this skill (`review/`, `assets/`,
 | `review` | standalone review of the current diff: Step 0 + Step 4 only, no plan, no code |
 | `rules` | write the repo's own review guidelines (see **Rules mode**), no feature work |
 | `learn <bug>` | turn an escaped bug (description, commit, issue link) into a project review rule (see **Learning**) |
-| `debate` | force the plan debate on a small task that would otherwise skip it |
+| `debate` (alone or any `debate …` phrase) | the plan debate runs even on a small task (auto-lite off) |
 
 **Small-task auto-lite** — after Step 1, if the plan touches one area, at most
 ~3 files, and no high-stakes trigger below, skip the plan debate (unless the
-user said `debate`) and say so in one line. Step 6 is skipped anyway when no UI
+user said any `debate` phrase) and say so in one line. Step 6 is skipped anyway when no UI
 changed. Review and the approval gate always run.
 
 **High-stakes auto-escalation** — regardless of the default, run the plan debate
@@ -191,7 +191,7 @@ Mermaid diagram).
 
 ### Step 1.5 — Debate the plan (default ON)
 
-Skip only on opt-out. Otherwise read the `debate` skill (`../debate/SKILL.md`
+Skip only on an opt-out phrase or under small-task auto-lite. Otherwise read the `debate` skill (`../debate/SKILL.md`
 next to this skill folder) and follow its protocol in full with the plan as the
 subject — do not improvise a shorter version.
 
@@ -305,8 +305,8 @@ then merge and de-duplicate their findings yourself.
 blocking findings pasted in, then a fresh `code-reviewer` on the result. Do not
 go to QA until review is `APPROVE`.
 
-If the user dismisses a finding (false positive, intended, out of scope), see
-**Learning** below before moving on.
+If the user dismisses a finding (false positive, intended, out of scope),
+drop it and note it for **Learning**; do not stop the pipeline for it.
 
 ### Step 4.5 — Debate the implementation (conditional)
 
@@ -359,7 +359,7 @@ item.
 **Visual QA:** docs/visual-qa/<date>-<slug>/report.md (if it ran)
 **Review layers:** project rules used, packs applied
 **Checker:** verdict (or "not installed")
-**Proposed rule changes:** learned `Do not report` lines / new rules awaiting approval (if any)
+**Proposed rule changes:** drafted `Do not report` lines / rules, each with its target file — approve to append (if any)
 **Context docs updated:** (if on)
 **Open items / blockers:** ...
 ```
@@ -392,12 +392,12 @@ own guidelines file (`.github/claude/review-guidelines.md` in the area, or the
 rule file Step 0 found; create it from the template if there is none). Nothing
 is written without the user's approval, and nothing is committed.
 
-- **A dismissed finding.** When the user rejects a review finding (in Step 4,
-  in `review` mode, or on the page), propose one `Do not report` line in the
-  project's terms: what not to flag and why it is safe here (e.g. "raw SQL in
-  `reports/` — read-only replica, inputs are enum-validated in
+- **A dismissed finding.** When the user rejects a review finding (in Step 4
+  or in `review` mode), note it. For each, draft one `Do not report` line in
+  the project's terms: what not to flag and why it is safe here (e.g. "raw
+  SQL in `reports/` — read-only replica, inputs are enum-validated in
   `ReportQuery`"). Narrow beats broad: never propose silencing a whole core
-  rule. Show the line and the target file; append on approval.
+  rule.
 - **An escaped bug** (`learn <bug>`: a description, a fix commit, an issue or
   incident link). Spawn `architect` (read-only) with it, the Step 0 report and
   the current rule files, to find: the root cause and the failing scenario;
@@ -407,15 +407,17 @@ is written without the user's approval, and nothing is committed.
   definitions. Show it; append on approval. If the rule is not specific to
   this project, also print it as a suggested addition to the matching stack
   pack, for the user to send upstream.
-- **End of every run** — if findings were dismissed or the user named a bug
-  that review missed, list the proposed rule changes once in the final
-  report rather than interrupting the pipeline for each.
+- **When to ask.** Collect the drafts during the run and ask once at the end:
+  in the Step 7 report, or at the end of the `review` mode output. Show each
+  line with its target file; append the ones the user approves, right then.
+  `learn <bug>` is the exception: it is a run of its own, so show the rule and
+  ask immediately.
 
 ## Rules
 
 - Never skip the approval gate. Never write code before it.
 - Never skip review before QA.
-- Never skip the plan debate without an opt-out phrase, and never move it after
+- Never skip the plan debate without an opt-out phrase or auto-lite, and never move it after
   implementation — its whole value is being early.
 - Never break debate isolation to "help" a side.
 - The debate advises; only the user gates.

@@ -1,6 +1,6 @@
 {
   "name": "ship-crew",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Multi-agent feature pipeline for any stack: recon, plan, adversarial debate, a decision page you approve, parallel developers, layered code review that learns, QA and visual QA.",
   "author": {
     "name": "Sporium"

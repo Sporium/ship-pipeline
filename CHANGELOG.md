@@ -3,8 +3,11 @@
 The plugin version lives in `.claude-plugin/plugin.json`. Plugin users only get
 an update when it changes, so bump it with every release and tag `vX.Y.Z`.
 
+## 1.2.1
+- Fixes: auto-lite now consistent with the debate rules and modes; dismissed findings are proposed once at the end of a run; namespaced agent names in the debate skill; plugin install commands.
+
 ## 1.2.0
-- Claude Code plugin and marketplace manifests (`/plugin install ship-crew --marketplace Sporium/ship-crew`).
+- Claude Code plugin and marketplace manifests (`/plugin marketplace add Sporium/ship-crew`, then `/plugin install ship-crew@ship-crew`).
 - Repository renamed from `ship-pipeline` to `ship-crew`.
 - Decision page at the approval gate: open choices, decisions, Mermaid flow, risk map, what the debate changed; via `lavish` when installed, text otherwise. `text plan` mode.
 - Architect plan gains Decisions and Behaviour and flow sections.
