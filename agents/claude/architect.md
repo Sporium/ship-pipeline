@@ -46,6 +46,20 @@ Per area, an ordered list of small units, each independently committable.
 - Things needing the user's decision before coding — list them as questions
   instead of guessing
 
+### 8. Decisions
+At most 7. Each: the choice, why, and the main alternative you rejected with
+its cost. Only choices a reviewer could reasonably make differently: data
+model, where logic lives, sync vs async, new dependency, contract shape. This
+is what the user reads to approve the plan, so keep each to 2 lines.
+
+### 9. Behaviour and flow
+- What a user or caller will see change, and what this plan deliberately does
+  not do.
+- One Mermaid `sequenceDiagram` (or `flowchart` when there is no call chain) of
+  the main path after the change: callers, services, stores, external APIs,
+  where auth is checked and where the transaction starts and ends. Use the
+  real names from the code. At most ~15 arrows.
+
 ## Investigation rules
 - Read at least one existing similar feature and match its patterns.
 - Read every `AGENTS.md` / `CLAUDE.md` / `CLAUDE.md` on the path to each affected area before planning; the

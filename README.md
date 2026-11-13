@@ -8,7 +8,7 @@ A recon agent maps the repo, an architect plans the feature, the plan gets debat
   ├─ 0   Explore .............. repo map, stack, commands, review-rule files (haiku)
   ├─ 1   architect ............ reads the code, writes the plan (read-only)
   ├─ 1.5 debate ............... challenger ⟷ defender per axis, isolated → judge
-  ├─ 2   ⛔ YOU APPROVE ........ the plan, plus the tradeoffs the debate left open
+  ├─ 2   ⛔ YOU APPROVE ........ one decision page: open choices, decisions, flow diagram, risk map, what the debate changed
   ├─ 3   developer × N ........ one per area (backend/, web/, admin/…), in parallel
   ├─ 4   code_reviewer ........ project rules > stack packs > core → APPROVE / CHANGES REQUESTED
   ├─ 4.5 debate (optional) .... on the implementation, after review passes
@@ -88,7 +88,7 @@ Examples use Claude Code syntax. In Codex, use `$` instead of `/`.
 /debate quick should the cursor live in Redis or in a DB TTL index?
 ```
 
-Flags in the request text: `plan only`, `skip debate`, `debate full`, `debate implementation`, `debate <axes>`, `skip context docs`, `skip visual qa`, `review`, `rules`.
+Flags in the request text: `plan only`, `skip debate`, `debate full`, `debate implementation`, `debate <axes>`, `skip context docs`, `skip visual qa`, `text plan`, `review`, `rules`.
 
 The pipeline also auto-escalates. When the plan touches a schema/index, auth, money, a cross-repo contract, a new shared abstraction, or anything hard to reverse, the debate runs on 3 axes with 3 independent judges, and an upheld point needs 2 of 3 votes.
 
@@ -114,6 +114,7 @@ The pipeline also auto-escalates. When the plan touches a schema/index, auth, mo
 - **Models (Claude Code).** Each agent pins its model in frontmatter: architect, review and debate run on `opus`; developer, qa_lead and visual_qa on `sonnet`; Step 0 uses the built-in `Explore` (haiku). So the split holds even when `CLAUDE_CODE_SUBAGENT_MODEL` defaults subagents to haiku. If your session has an advisor (`/advisor`), the conductor consults it before the approval gate, on a repeated failure and before the report. If you have a `checker` agent, it runs as the final gate. In Codex the agents only set `model_reasoning_effort` (high for the same roles), and the model comes from your session or from `agents.default_subagent_model`.
 - **Read-only roles.** In Claude Code they only get the Read/Grep/Glob/Bash tools. In Codex, subagents inherit the parent sandbox, so those roles stay read-only because their instructions say so.
 - **Editing.** The skills are a single shared copy. Agents live in two copies (`agents/claude` and `agents/codex`), so when you change an agent's instructions, change both files.
+- **Decision page.** If the [`lavish`](https://www.npmjs.com/package/lavish-axi) skill is installed, Step 2 opens the plan as an HTML page you annotate: answer the debate's open tradeoffs, comment on decisions, approve. Comments go back to the architect. Without it (or with `text plan`) the same sections appear in the chat. The architect's plan now ends with Decisions and a Mermaid flow diagram either way.
 - **visual_qa** needs a browser MCP (Playwright). Without one, the step is skipped and the run says so.
 
 ## Output files

@@ -76,6 +76,7 @@ This file uses the hyphenated names. In Codex, read `-` as `_`.
 | `debate <axes>` (e.g. `debate cost,operability`) | overrides axis choice |
 | `skip context docs` | context docs off (see below) |
 | `skip visual qa` | Step 6 off |
+| `text plan` | Step 2 in chat even when `lavish` is installed |
 | `review` | standalone review of the current diff: Step 0 + Step 4 only, no plan, no code |
 | `rules` | write the repo's own review guidelines (see **Rules mode**), no feature work |
 
@@ -171,7 +172,8 @@ is done, offer `rules` mode if Step 0 found no project rule file.
 
 Spawn `architect` with the brief above and the Step 0 report. Wait for the plan. It must contain:
 Goal, Affected Areas, Files to Change, API Contract, Work Units per area,
-Execution Order, Risks & Open Questions.
+Execution Order, Risks & Open Questions, Decisions, Behaviour and flow (with a
+Mermaid diagram).
 
 ### Step 1.5 — Debate the plan (default ON)
 
@@ -194,13 +196,66 @@ The debate advises. It never gates.
 
 ### Step 2 — Approval gate (STOP)
 
-Show the plan to the user. If the debate ran, also show: what it changed, which
-blocking points were upheld, and every `UNRESOLVED` tradeoff **as an explicit
-question with its cost each way**. Do not resolve those yourself.
+This is the point where the user decides, so give them the whole picture at
+once: the plan **and** what the debate did to it. The content is the same
+whether it is shown as a page or as text.
 
-**Stop and wait** for explicit approval ("go", "approved", "yes"). If the user
-asks for changes, re-run `architect` with their feedback. In `plan only` mode,
-end here (offer to save the plan to `docs/plans/<slug>.md`).
+#### What to show, in this order
+
+1. **Goal** in one sentence; active modes; which high-stakes triggers fired.
+2. **Choices for you** — first, because the plan cannot be approved while they
+   are open:
+   - every `UNRESOLVED` debate tradeoff as a card: the question, each option
+     with its cost, and the judge's note — all taken from the debate record;
+   - every open question from plan §7, as the architect wrote it, with the
+     context it gave. Do not invent options or costs the architect or judges
+     did not state.
+3. **Decisions** (plan §8) with why and the rejected alternative.
+4. **Flow** — the Mermaid diagram from plan §9, plus what changes for the user
+   and what is out of scope.
+5. **Risk map** — one row per area: red (auth, money, schema/migration,
+   cross-repo contract, hard to reverse), yellow (shared code, new dependency,
+   config), green (the rest), with the reason. Keep it: Step 7 uses it.
+6. **What the debate changed** — upheld blocking points and how the revised
+   plan answers each; rejected points in one line each. If the debate was
+   skipped, say so.
+7. **Work** — areas, work units, execution order (parallel vs sequential);
+   files to change and the API contract (collapsed on a page).
+
+#### How to show it
+
+- **Decision page.** If a `lavish` skill is installed (in your skill list),
+  invoke it and build one HTML page with the sections above, following the
+  guidance that skill gives you (it fetches its own CLI instructions; do not
+  improvise its commands). Write it to `docs/plans/<YYYY-MM-DD>-<slug>.html`
+  if the repo has a `docs/` folder, otherwise to a temporary folder, and tell
+  the user the path. Then run the review loop the skill describes.
+- **Text.** In the chat, same sections, same order, the flow as a Mermaid code
+  block. Use text when there is no `lavish` skill, when the user asked for
+  `text plan`, in Codex unless the page is known to work there, and whenever
+  the page fails (the command errors, no browser opens, the loop returns
+  nothing). Say why you fell back; never let the gate stall on the page.
+
+#### Handling the user's response (both ways)
+
+- **An answer to a choice** → record it. Recorded answers go verbatim into
+  every later `architect` brief and into the `developer` briefs as fixed
+  decisions.
+- **A change request** (page comment or chat) → spawn a fresh `architect` with
+  the original brief, its plan, the debate verdicts, the recorded answers and
+  the requests verbatim. Show the result the same way again and mark what
+  changed since the previous version. This is separate from the debate's
+  one-revise limit.
+- **Approval** must be an explicit statement from the user ("go", "approved",
+  "yes", or the same words written on the page). Submitting annotations,
+  answering choices, silence, or closing the page is **not** approval. Every
+  choice must be answered before approval counts; if one is open, ask for it.
+
+**Stop and wait** for that approval. Do not resolve tradeoffs yourself.
+
+On approval: in `plan only` mode, **end here** — offer to save the plan as
+`docs/plans/<YYYY-MM-DD>-<slug>.md` next to the page, and write no code.
+Otherwise go to Step 3.
 
 ### Step 3 — Implementation (parallel per area)
 
@@ -281,6 +336,7 @@ item.
 **Files changed:** per area
 **Tests added:** ...
 **Review verdict:** ...
+**Read yourself:** the files in the red rows of the Step 2 risk map, with the hunks that changed
 **Build summary:** docs/build-summary.md
 **Debate record:** docs/reviews/<date>-<slug>-debate.md (if a debate ran)
 **Visual QA:** docs/visual-qa/<date>-<slug>/report.md (if it ran)
