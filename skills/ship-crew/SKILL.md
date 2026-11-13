@@ -59,6 +59,13 @@ and instructions:
 
 This file uses the hyphenated names. In Codex, read `-` as `_`.
 
+**Installed as a Claude Code plugin**, the agents are namespaced:
+`ship-crew:architect`, `ship-crew:code-reviewer`, … and the debate skill is
+`/ship-crew:debate`. Use whichever form appears in your list of available
+agents; if both exist (plugin and a copy in `.claude/agents`), prefer the
+namespaced one. Files next to this skill (`review/`, `assets/`,
+`../debate/SKILL.md`) are at the same relative paths either way.
+
 - Spawn one-shot agents. In Claude Code **do not pass `name:` / `team_name:`**
   (teammate mode): a named spawn can sit idle and never receive its prompt.
 - Subagents may inherit the parent's permissions. Read-only roles are read-only
@@ -79,6 +86,13 @@ This file uses the hyphenated names. In Codex, read `-` as `_`.
 | `text plan` | Step 2 in chat even when `lavish` is installed |
 | `review` | standalone review of the current diff: Step 0 + Step 4 only, no plan, no code |
 | `rules` | write the repo's own review guidelines (see **Rules mode**), no feature work |
+| `learn <bug>` | turn an escaped bug (description, commit, issue link) into a project review rule (see **Learning**) |
+| `debate` | force the plan debate on a small task that would otherwise skip it |
+
+**Small-task auto-lite** — after Step 1, if the plan touches one area, at most
+~3 files, and no high-stakes trigger below, skip the plan debate (unless the
+user said `debate`) and say so in one line. Step 6 is skipped anyway when no UI
+changed. Review and the approval gate always run.
 
 **High-stakes auto-escalation** — regardless of the default, run the plan debate
 on 3 axes with 3 independent judges when the plan touches any of:
@@ -291,6 +305,9 @@ then merge and de-duplicate their findings yourself.
 blocking findings pasted in, then a fresh `code-reviewer` on the result. Do not
 go to QA until review is `APPROVE`.
 
+If the user dismisses a finding (false positive, intended, out of scope), see
+**Learning** below before moving on.
+
 ### Step 4.5 — Debate the implementation (conditional)
 
 Only on `debate full`, `debate implementation`, or a high-stakes trigger that
@@ -342,6 +359,7 @@ item.
 **Visual QA:** docs/visual-qa/<date>-<slug>/report.md (if it ran)
 **Review layers:** project rules used, packs applied
 **Checker:** verdict (or "not installed")
+**Proposed rule changes:** learned `Do not report` lines / new rules awaiting approval (if any)
 **Context docs updated:** (if on)
 **Open items / blockers:** ...
 ```
@@ -363,7 +381,35 @@ failure modes, in the format of `assets/review-guidelines-template.md`.
    already cover.
 3. Show the user the draft per area. On approval, write it to
    `.github/claude/review-guidelines.md` in that area (or where the user says).
-   Do not commit.
+   If the file already exists, merge: keep every existing rule and every
+   `Do not report` entry (they may be learned ones), add new rules after them,
+   and show the diff instead of a fresh draft. Do not commit.
+
+## Learning — the review gets better with every run
+
+Project rules beat generic packs, so every correction goes into the project's
+own guidelines file (`.github/claude/review-guidelines.md` in the area, or the
+rule file Step 0 found; create it from the template if there is none). Nothing
+is written without the user's approval, and nothing is committed.
+
+- **A dismissed finding.** When the user rejects a review finding (in Step 4,
+  in `review` mode, or on the page), propose one `Do not report` line in the
+  project's terms: what not to flag and why it is safe here (e.g. "raw SQL in
+  `reports/` — read-only replica, inputs are enum-validated in
+  `ReportQuery`"). Narrow beats broad: never propose silencing a whole core
+  rule. Show the line and the target file; append on approval.
+- **An escaped bug** (`learn <bug>`: a description, a fix commit, an issue or
+  incident link). Spawn `architect` (read-only) with it, the Step 0 report and
+  the current rule files, to find: the root cause and the failing scenario;
+  the code path; why review would have missed it (no rule, rule too vague,
+  wrong layer); and a rule in the guidelines format (mechanism, how to spot it
+  in a diff, the fix with the project's helper), severity by the core
+  definitions. Show it; append on approval. If the rule is not specific to
+  this project, also print it as a suggested addition to the matching stack
+  pack, for the user to send upstream.
+- **End of every run** — if findings were dismissed or the user named a bug
+  that review missed, list the proposed rule changes once in the final
+  report rather than interrupting the pipeline for each.
 
 ## Rules
 

@@ -1,0 +1,14 @@
+{
+  "name": "ship-crew",
+  "description": "The ship-crew multi-agent pipeline for Claude Code.",
+  "owner": {
+    "name": "Sporium"
+  },
+  "plugins": [
+    {
+      "name": "ship-crew",
+      "source": "./",
+      "description": "Multi-agent feature pipeline for any stack: recon, plan, adversarial debate, a decision page you approve, parallel developers, layered code review that learns, QA and visual QA."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "ship-crew",
+  "version": "1.2.0",
+  "description": "Multi-agent feature pipeline for any stack: recon, plan, adversarial debate, a decision page you approve, parallel developers, layered code review that learns, QA and visual QA.",
+  "author": {
+    "name": "Sporium"
+  },
+  "homepage": "https://github.com/Sporium/ship-crew",
+  "repository": "https://github.com/Sporium/ship-crew",
+  "keywords": [
+    "multi-agent",
+    "code-review",
+    "planning",
+    "debate",
+    "qa"
+  ],
+  "agents": [
+    "./agents/claude/architect.md",
+    "./agents/claude/code-reviewer.md",
+    "./agents/claude/debate-challenger.md",
+    "./agents/claude/debate-defender.md",
+    "./agents/claude/debate-judge.md",
+    "./agents/claude/developer.md",
+    "./agents/claude/qa-lead.md",
+    "./agents/claude/visual-qa.md"
+  ]
+}

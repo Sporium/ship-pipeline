@@ -22,10 +22,19 @@ The main session acts as the conductor. It never writes feature code itself. Eve
 
 ## Quick start
 
+Claude Code, as a plugin (updates with one command):
+
+```
+/plugin install ship-crew --marketplace Sporium/ship-crew
+/ship-crew:ship-crew plan only <task>
+```
+
+Or copy the files in (short `/ship-crew` command, Claude Code and Codex):
+
 ```bash
-git clone https://github.com/Sporium/ship-pipeline
-./ship-pipeline/install.sh /path/to/your/repo            # Claude Code + Codex
-./ship-pipeline/install.sh /path/to/your/repo --codex    # Codex only
+git clone https://github.com/Sporium/ship-crew
+./ship-crew/install.sh --user                 # every project, Claude Code + Codex
+./ship-crew/install.sh /path/to/your/repo     # one repo
 ```
 
 ## What's inside
@@ -42,11 +51,24 @@ agents/claude/*.md        — 8 agents for Claude Code (code-reviewer, debate-ju
 agents/codex/*.toml       — the same 8 agents for Codex (code_reviewer, debate_judge, …)
 codex-config.example.toml — recommended [agents] settings + optional Playwright MCP
 install.sh
+.claude-plugin/            — plugin + marketplace manifests (Claude Code)
+CHANGELOG.md
 ```
 
 The skills follow the shared SKILL.md format, so one copy works in both tools. The agents have different formats in each tool but the same instructions. Each skill has a short "Runtime" section that tells the conductor how to spawn agents in whichever tool it's running in.
 
 ## Install
+
+### Plugin (Claude Code)
+
+```
+/plugin marketplace add Sporium/ship-crew
+/plugin install ship-crew@ship-crew
+```
+
+Update: `/plugin marketplace update ship-crew`, then `/plugin update ship-crew@ship-crew` and `/reload-plugins`. Plugin parts are namespaced: the command is `/ship-crew:ship-crew`, the debate is `/ship-crew:debate`, agents are `ship-crew:architect` and so on. Use either the plugin or `install.sh` for Claude Code, not both, or you get two copies of every agent.
+
+### Files (`install.sh`, Claude Code and Codex)
 
 ```bash
 ./install.sh /path/to/repo            # into a repo, for both Claude Code and Codex
@@ -66,7 +88,7 @@ The skills follow the shared SKILL.md format, so one copy works in both tools. T
 2. Project-scoped `.codex/agents` only load in a **trusted** project.
 3. Restart Codex and check that `/skills` shows `ship-crew` and `debate`.
 
-**Upgrading from `ship`:** the skill was renamed. Delete the old folder (`.claude/skills/ship`, `.agents/skills/ship`) and re-run the installer with `--force` so the agents get the new instructions.
+**Upgrading from `ship`:** the skill was renamed. Delete the old folder (`.claude/skills/ship`, `.agents/skills/ship`) and re-run the installer with `--force` so the agents get the new instructions. The repo was renamed from `ship-pipeline`; GitHub redirects the old URL.
 
 **Claude Code:** restart the session. `/agents` should list the 8 agents. The skills don't appear in `/agents`, and the model can't see them in its own skill list either. They only run when you type `/ship-crew` or `/debate`.
 
@@ -84,11 +106,14 @@ Examples use Claude Code syntax. In Codex, use `$` instead of `/`.
 /ship-crew debate cost,operability ...                      # choose the debate axes yourself
 /ship-crew review                                      # review the current diff only
 /ship-crew rules                                       # write this repo's own review guidelines
+/ship-crew learn <bug, commit or issue>                # turn a bug review missed into a project rule
 /debate                                                # debate the current uncommitted diff
 /debate quick should the cursor live in Redis or in a DB TTL index?
 ```
 
-Flags in the request text: `plan only`, `skip debate`, `debate full`, `debate implementation`, `debate <axes>`, `skip context docs`, `skip visual qa`, `text plan`, `review`, `rules`.
+Flags in the request text: `plan only`, `skip debate`, `debate full`, `debate implementation`, `debate <axes>`, `skip context docs`, `skip visual qa`, `text plan`, `debate`, `review`, `rules`, `learn`.
+
+Small tasks (one area, about 3 files, no high-stakes trigger) skip the plan debate automatically; say `debate` to force it.
 
 The pipeline also auto-escalates. When the plan touches a schema/index, auth, money, a cross-repo contract, a new shared abstraction, or anything hard to reverse, the debate runs on 3 axes with 3 independent judges, and an upheld point needs 2 of 3 votes.
 
@@ -114,6 +139,7 @@ The pipeline also auto-escalates. When the plan touches a schema/index, auth, mo
 - **Models (Claude Code).** Each agent pins its model in frontmatter: architect, review and debate run on `opus`; developer, qa_lead and visual_qa on `sonnet`; Step 0 uses the built-in `Explore` (haiku). So the split holds even when `CLAUDE_CODE_SUBAGENT_MODEL` defaults subagents to haiku. If your session has an advisor (`/advisor`), the conductor consults it before the approval gate, on a repeated failure and before the report. If you have a `checker` agent, it runs as the final gate. In Codex the agents only set `model_reasoning_effort` (high for the same roles), and the model comes from your session or from `agents.default_subagent_model`.
 - **Read-only roles.** In Claude Code they only get the Read/Grep/Glob/Bash tools. In Codex, subagents inherit the parent sandbox, so those roles stay read-only because their instructions say so.
 - **Editing.** The skills are a single shared copy. Agents live in two copies (`agents/claude` and `agents/codex`), so when you change an agent's instructions, change both files.
+- **The review learns.** When you dismiss a finding, the conductor proposes a narrow `Do not report` line for your project's guidelines; `learn <bug>` turns an escaped bug into a new project rule (and suggests a pack rule if it is generic). Nothing is written without your approval, and `rules` mode merges instead of overwriting, so learned lines survive.
 - **Decision page.** If the [`lavish`](https://www.npmjs.com/package/lavish-axi) skill is installed, Step 2 opens the plan as an HTML page you annotate: answer the debate's open tradeoffs, comment on decisions, approve. Comments go back to the architect. Without it (or with `text plan`) the same sections appear in the chat. The architect's plan now ends with Decisions and a Mermaid flow diagram either way.
 - **visual_qa** needs a browser MCP (Playwright). Without one, the step is skipped and the run says so.
 
